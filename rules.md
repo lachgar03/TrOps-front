@@ -15,9 +15,9 @@ Nous utilisons une approche par "Features" similaire au Backend :
 * **Composants Fonctionnels :** Utilisez exclusivement des composants fonctionnels avec des Hooks. Pas de classes.
 * **Props immuables :** Ne jamais modifier directement une prop.
 * **Destructuring :** Utilisez le destructuring pour les props et les objets (ex: `const { name, id } = user;`).
-* **Naming :** * Composants : `PascalCase.jsx`
+* **Naming :** * Composants : `PascalCase.tsx`
     * Fonctions et variables : `camelCase`
-    * Services API : `nomMetierApi.js`
+    * Services API : `nomMetierApi.ts`
 
 ## 3. Gestion de l'État (Zustand)
 * Utilisez **Zustand** pour l'état global (Auth, Paramètres utilisateur).
@@ -25,7 +25,7 @@ Nous utilisons une approche par "Features" similaire au Backend :
 * Évitez de passer des props sur plus de 2 niveaux ("Prop Drilling"). Si c'est le cas, utilisez Zustand ou un Contexte.
 
 ## 4. Appels API & Sécurité (Axios)
-* **Instance Axios :** Créez une instance centrale dans `src/config/axios.js`.
+* **Instance Axios :** Créez une instance centrale dans `src/config/axios.ts`.
 * **Intercepteurs :** Configurez un intercepteur pour injecter automatiquement le token JWT du `localStorage` dans chaque requête.
 * **Gestion d'erreur :** Centralisez la gestion des erreurs 401 (Unauthorized) pour déconnecter l'utilisateur automatiquement.
 
