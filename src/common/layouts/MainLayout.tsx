@@ -1,5 +1,6 @@
 import React, { type ReactNode, useState } from 'react';
 import { useAuthStore } from '@/features/auth/store/authStore';
+import { AlertDropdown } from '@/features/alert/components/AlertDropdown';
 import { 
   LayoutDashboard, 
   Map, 
@@ -7,7 +8,6 @@ import {
   Users, 
   Plus, 
   LogOut,
-  Bell,
   Menu,
   X
 } from 'lucide-react';
@@ -105,10 +105,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               Nouvelle Mission
             </Link>
             
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
+            <AlertDropdown />
 
             <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
 

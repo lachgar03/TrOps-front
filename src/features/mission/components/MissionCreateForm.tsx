@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import type { AxiosError } from 'axios';
 import { missionApi } from '../services/missionApi';
-import type { MissionRequest } from '../types/mission.types';
-import { Truck, Users, DollarSign, Loader2, CheckCircle2, AlertCircle, TrendingUp, TrendingDown, ClipboardList } from 'lucide-react';
+import { MissionStatus, type MissionRequest } from '../types/mission.types';
+import { Truck, Users, DollarSign, Loader2, CheckCircle2, AlertCircle, TrendingUp, TrendingDown, ClipboardList, Activity } from 'lucide-react';
 
 // Mocks temporaires en attendant les modules Flotte et Clients
 const MOCK_VEHICLES = [
@@ -22,6 +23,7 @@ export const MissionCreateForm: React.FC = () => {
     clientId: '',
     revenues: 0,
     costs: 0,
+    status: MissionStatus.PLANNED,
   });
   
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -50,16 +52,20 @@ export const MissionCreateForm: React.FC = () => {
     try {
       await missionApi.createMission(formData);
       setStatus('success');
-      // Réinitialiser le formulaire après succès
-      setFormData({ vehicleId: '', clientId: '', revenues: 0, costs: 0 });
-      
-      // Retour à l'état initial après 3 secondes
-      setTimeout(() => setStatus('idle'), 3000);
-    } catch (err: any) {
+      setFormData({ vehicleId: '', clientId: '', revenues: 0, costs: 0, status: MissionStatus.PLANNED });
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
       setStatus('error');
-      setErrorMessage(err.response?.data?.message || 'Erreur lors de la création de la mission.');
+      setErrorMessage(axiosErr.response?.data?.message ?? 'Erreur lors de la création de la mission.');
     }
   };
+
+  // Auto-reset success state — properly cleaned up
+  useEffect(() => {
+    if (status !== 'success') return;
+    const timer = setTimeout(() => setStatus('idle'), 3000);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden font-sans text-gray-900">
@@ -82,9 +88,9 @@ export const MissionCreateForm: React.FC = () => {
         )}
 
         {status === 'error' && errorMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600 font-medium">{errorMessage}</p>
+          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-rose-600 font-medium">{errorMessage}</p>
           </div>
         )}
 
@@ -176,6 +182,28 @@ export const MissionCreateForm: React.FC = () => {
                 />
               </div>
             </div>
+
+            {/* Statut de la Mission */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700">Statut initial</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Activity className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  name="status"
+                  required
+                  value={formData.status}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm appearance-none"
+                >
+                  <option value={MissionStatus.PLANNED}>Planifiée</option>
+                  <option value={MissionStatus.IN_PROGRESS}>En cours</option>
+                  <option value={MissionStatus.COMPLETED}>Terminée</option>
+                  <option value={MissionStatus.CANCELLED}>Annulée</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Insight-Driven UI: Encart Profit Temps Réel */}
@@ -192,10 +220,10 @@ export const MissionCreateForm: React.FC = () => {
               </div>
               <div>
                 <p className={`text-sm font-semibold ${isProfitPositive ? 'text-emerald-800' : 'text-rose-800'}`}>
-                  Profit Estimé
+                  Indicateur Financier (Revenus - Coûts)
                 </p>
                 <p className={`text-xs ${isProfitPositive ? 'text-emerald-600/80' : 'text-rose-600/80'}`}>
-                  Calculé automatiquement avant soumission
+                  À titre indicatif avant validation
                 </p>
               </div>
             </div>

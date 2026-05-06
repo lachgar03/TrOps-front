@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { authApi } from '../services/authApi';
 import type { LoginRequest } from '../types/auth.types';
+import type { AxiosError } from 'axios';
 import { Mail, Lock, Loader2, LogIn, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const LoginForm: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<LoginRequest>({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,9 +26,10 @@ export const LoginForm: React.FC = () => {
     try {
       const response = await authApi.login(formData);
       login(response.token);
-      // TODO: Rediriger l'utilisateur via le routeur
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Identifiants incorrects.');
+      navigate('/');
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      setError(axiosErr.response?.data?.message ?? 'Identifiants incorrects.');
     } finally {
       setIsLoading(false);
     }
@@ -43,9 +47,9 @@ export const LoginForm: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600 font-medium">{error}</p>
+          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-rose-600 font-medium">{error}</p>
           </div>
         )}
 

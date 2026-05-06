@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { authApi } from '../services/authApi';
 import type { RegisterCompanyRequest } from '../types/auth.types';
+import type { AxiosError } from 'axios';
 import { Building2, User, Mail, Lock, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const RegisterCompanyForm: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<RegisterCompanyRequest>({
     companyName: '',
     adminFirstName: '',
@@ -29,9 +32,10 @@ export const RegisterCompanyForm: React.FC = () => {
     try {
       const response = await authApi.registerCompany(formData);
       register(response.token);
-      // TODO: Redirection
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Erreur lors de l'inscription.");
+      navigate('/');
+    } catch (err) {
+      const axiosErr = err as AxiosError<{ message?: string }>;
+      setError(axiosErr.response?.data?.message ?? "Erreur lors de l'inscription.");
     } finally {
       setIsLoading(false);
     }
@@ -49,9 +53,9 @@ export const RegisterCompanyForm: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-8 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-600 font-medium">{error}</p>
+          <div className="mb-8 p-4 rounded-xl bg-rose-50 border border-rose-100 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-rose-600 font-medium">{error}</p>
           </div>
         )}
 

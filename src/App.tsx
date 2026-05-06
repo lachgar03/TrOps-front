@@ -5,6 +5,8 @@ import { RegisterCompanyForm } from '@/features/auth/components/RegisterCompanyF
 import { MainLayout } from '@/common/layouts/MainLayout';
 import { MissionList } from '@/features/mission/components/MissionList';
 import { MissionCreateForm } from '@/features/mission/components/MissionCreateForm';
+import { VehicleList } from '@/features/vehicle/components/VehicleList';
+import { ActiveAlertsWidget } from '@/features/dashboard/components/ActiveAlertsWidget';
 import type { JSX } from 'react';
 
 /**
@@ -33,14 +35,7 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
-// Écran de Dashboard temporaire
-const DashboardPlaceholder = () => (
-  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <h2 className="text-xl font-bold text-gray-900 mb-4">Bienvenue sur le Dashboard TrOps</h2>
-    <p className="text-gray-500 mb-2">Vous êtes correctement authentifié et sur l'espace sécurisé.</p>
-    <p className="text-sm text-indigo-600 font-medium">L'architecture Frontend B2B est prête ! 🚀</p>
-  </div>
-);
+
 
 export default function App() {
   return (
@@ -70,7 +65,7 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <DashboardPlaceholder />
+                <ActiveAlertsWidget />
               </MainLayout>
             </ProtectedRoute>
           } 
@@ -94,6 +89,18 @@ export default function App() {
               </MainLayout>
             </ProtectedRoute>
           } 
+        />
+
+        {/* Route Flotte */}
+        <Route
+          path="/flotte"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <VehicleList />
+              </MainLayout>
+            </ProtectedRoute>
+          }
         />
 
         {/* Fallback : Redirige vers l'accueil (qui redirigera vers login si nécessaire) */}
