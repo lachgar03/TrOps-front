@@ -9,12 +9,12 @@ export type {
   ProfitabilityScore as ProfitabilityScoreType,
 } from '../../../common/types/enums';
 
+// Aligned with backend MissionRequestDTO (no status field — backend forces PLANNED)
 export interface MissionRequest {
   vehicleId: string;
   clientId: string;
   revenues: number;
   costs: number;
-  status: import('../../../common/types/enums').MissionStatus;
 }
 
 export interface MissionResponse {

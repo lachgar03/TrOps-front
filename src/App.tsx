@@ -3,10 +3,14 @@ import { useAuthStore } from '@/features/auth/store/authStore';
 import { LoginForm } from '@/features/auth/components/LoginForm';
 import { RegisterCompanyForm } from '@/features/auth/components/RegisterCompanyForm';
 import { MainLayout } from '@/common/layouts/MainLayout';
+import { DashboardPage } from '@/features/dashboard/components/DashboardPage';
 import { MissionList } from '@/features/mission/components/MissionList';
 import { MissionCreateForm } from '@/features/mission/components/MissionCreateForm';
 import { VehicleList } from '@/features/vehicle/components/VehicleList';
-import { ActiveAlertsWidget } from '@/features/dashboard/components/ActiveAlertsWidget';
+import { ClientsPage } from '@/features/client/components/ClientsPage';
+import { ExpensesPage } from '@/features/expense/components/ExpensesPage';
+import { MaintenancePage } from '@/features/maintenance/components/MaintenancePage';
+import { UsersPage } from '@/features/user/components/UsersPage';
 import type { JSX } from 'react';
 
 /**
@@ -34,8 +38,6 @@ const PublicRoute = ({ children }: { children: JSX.Element }) => {
   
   return children;
 };
-
-
 
 export default function App() {
   return (
@@ -65,7 +67,7 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <ActiveAlertsWidget />
+                <DashboardPage />
               </MainLayout>
             </ProtectedRoute>
           } 
@@ -90,8 +92,6 @@ export default function App() {
             </ProtectedRoute>
           } 
         />
-
-        {/* Route Flotte */}
         <Route
           path="/flotte"
           element={
@@ -102,8 +102,48 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/clients"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <ClientsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/depenses"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <ExpensesPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/maintenance"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <MaintenancePage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <UsersPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Fallback : Redirige vers l'accueil (qui redirigera vers login si nécessaire) */}
+        {/* Fallback : Redirige vers l'accueil */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

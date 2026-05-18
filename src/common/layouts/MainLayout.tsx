@@ -6,10 +6,13 @@ import {
   Map, 
   Truck, 
   Users, 
+  Receipt,
+  Wrench,
   Plus, 
   LogOut,
   Menu,
-  X
+  X,
+  UserCog
 } from 'lucide-react';
 import { NavLink, Link } from 'react-router-dom';
 
@@ -26,7 +29,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     { name: 'Missions', href: '/missions', icon: Map },
     { name: 'Flotte', href: '/flotte', icon: Truck },
     { name: 'Clients', href: '/clients', icon: Users },
+    { name: 'Dépenses', href: '/depenses', icon: Receipt },
+    { name: 'Maintenance', href: '/maintenance', icon: Wrench },
   ];
+
+  if (user?.role === 'ADMIN') {
+    navigation.push({ name: 'Utilisateurs', href: '/users', icon: UserCog });
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">

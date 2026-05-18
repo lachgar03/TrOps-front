@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Truck, Loader2, AlertCircle, ChevronDown, TrendingUp, TrendingDown, Minus, Wrench, CheckCircle2 } from 'lucide-react';
+import { Truck, Loader2, AlertCircle, ChevronDown, TrendingUp, TrendingDown, Minus, Wrench, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { vehicleApi } from '../services/vehicleApi';
 import type { VehicleResponse, VehicleFinancialSummary } from '../types/vehicle.types';
+
+const PAGE_SIZE = 10;
 
 // ─── Sub-component: Financial Summary Panel ────────────────────────────────────
 
@@ -53,26 +55,26 @@ const FinancialPanel: React.FC<FinancialPanelProps> = ({ vehicleId }) => {
     );
   }
 
-  const isProfit = summary.profit >= 0;
+  const isProfit = summary.totalProfit >= 0;
 
   const stats: { label: string; value: string; icon: React.ReactNode; color: string; bg: string }[] = [
     {
       label: 'Revenus totaux',
-      value: `${fmt(summary.totalRevenue)} MAD`,
+      value: `${fmt(summary.totalRevenues)} MAD`,
       icon: <TrendingUp className="w-4 h-4" />,
       color: 'text-emerald-700',
       bg: 'bg-emerald-50 border-emerald-100',
     },
     {
       label: 'Coûts totaux',
-      value: `${fmt(summary.totalCost)} MAD`,
+      value: `${fmt(summary.totalCosts)} MAD`,
       icon: <TrendingDown className="w-4 h-4" />,
       color: 'text-rose-600',
       bg: 'bg-rose-50 border-rose-100',
     },
     {
       label: 'Profit net',
-      value: `${isProfit ? '+' : ''}${fmt(summary.profit)} MAD`,
+      value: `${isProfit ? '+' : ''}${fmt(summary.totalProfit)} MAD`,
       icon: <Minus className="w-4 h-4" />,
       color: isProfit ? 'text-indigo-700' : 'text-rose-700',
       bg: isProfit ? 'bg-indigo-50 border-indigo-100' : 'bg-rose-50 border-rose-100',
@@ -110,11 +112,18 @@ export const VehicleList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+
   useEffect(() => {
     const fetchVehicles = async () => {
+      setIsLoading(true);
       try {
-        const data = await vehicleApi.fetchVehicles();
-        setVehicles(Array.isArray(data) ? data : []);
+        const data = await vehicleApi.fetchVehicles(currentPage - 1, PAGE_SIZE);
+        setVehicles(data.content || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalElements(data.totalElements || 0);
       } catch {
         setError('Impossible de charger la flotte.');
       } finally {
@@ -122,13 +131,13 @@ export const VehicleList: React.FC = () => {
       }
     };
     void fetchVehicles();
-  }, []);
+  }, [currentPage]);
 
   const toggleRow = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  if (isLoading) {
+  if (isLoading && vehicles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
@@ -163,7 +172,7 @@ export const VehicleList: React.FC = () => {
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-          Total : <span className="text-gray-900">{vehicles.length}</span>
+          Total : <span className="text-gray-900">{totalElements}</span>
         </div>
       </div>
 
@@ -251,6 +260,57 @@ export const VehicleList: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+          <p className="text-xs text-gray-500">
+            Page <span className="font-semibold text-gray-700">{currentPage}</span> sur{' '}
+            <span className="font-semibold text-gray-700">{totalPages}</span>
+            {' '}— {totalElements} véhicules au total
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 hover:border-indigo-200 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+              .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, idx) =>
+                item === 'ellipsis' ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-xs">…</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setCurrentPage(item as number)}
+                    className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors border ${
+                      currentPage === item
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'text-gray-600 border-transparent hover:bg-white hover:border-gray-200'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                )
+              )}
+            <button
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-white hover:text-indigo-600 hover:border-indigo-200 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

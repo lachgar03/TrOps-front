@@ -1,33 +1,46 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import type { AxiosError } from 'axios';
 import { missionApi } from '../services/missionApi';
-import { MissionStatus, type MissionRequest } from '../types/mission.types';
-import { Truck, Users, DollarSign, Loader2, CheckCircle2, AlertCircle, TrendingUp, TrendingDown, ClipboardList, Activity } from 'lucide-react';
-
-// Mocks temporaires en attendant les modules Flotte et Clients
-const MOCK_VEHICLES = [
-  { id: 'v1-uuid', registration: 'AB-123-CD' },
-  { id: 'v2-uuid', registration: 'EF-456-GH' },
-  { id: 'v3-uuid', registration: 'XY-999-ZZ' },
-];
-
-const MOCK_CLIENTS = [
-  { id: 'c1-uuid', name: 'Logistics Corp' },
-  { id: 'c2-uuid', name: 'Express Delivery' },
-  { id: 'c3-uuid', name: 'Global Freight' },
-];
+import type { MissionRequest } from '../types/mission.types';
+import { vehicleApi } from '@/features/vehicle/services/vehicleApi';
+import { clientApi } from '@/features/client/services/clientApi';
+import type { VehicleResponse } from '@/features/vehicle/types/vehicle.types';
+import type { ClientResponse } from '@/features/client/types/client.types';
+import { Truck, Users, DollarSign, Loader2, CheckCircle2, AlertCircle, TrendingUp, TrendingDown, ClipboardList } from 'lucide-react';
 
 export const MissionCreateForm: React.FC = () => {
+  const [vehicles, setVehicles] = useState<VehicleResponse[]>([]);
+  const [clients, setClients] = useState<ClientResponse[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
   const [formData, setFormData] = useState<MissionRequest>({
     vehicleId: '',
     clientId: '',
     revenues: 0,
     costs: 0,
-    status: MissionStatus.PLANNED,
   });
   
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Load real vehicles and clients from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [vehData, cliData] = await Promise.all([
+          vehicleApi.fetchVehicles(0, 1000), // Get all for dropdown
+          clientApi.fetchClients(0, 1000),
+        ]);
+        setVehicles(vehData.content || []);
+        setClients(cliData.content || []);
+      } catch {
+        setErrorMessage('Impossible de charger les véhicules et clients.');
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    void loadData();
+  }, []);
 
   // Calcul du profit en temps réel
   const profit = useMemo(() => {
@@ -52,7 +65,7 @@ export const MissionCreateForm: React.FC = () => {
     try {
       await missionApi.createMission(formData);
       setStatus('success');
-      setFormData({ vehicleId: '', clientId: '', revenues: 0, costs: 0, status: MissionStatus.PLANNED });
+      setFormData({ vehicleId: '', clientId: '', revenues: 0, costs: 0 });
     } catch (err) {
       const axiosErr = err as AxiosError<{ message?: string }>;
       setStatus('error');
@@ -60,7 +73,7 @@ export const MissionCreateForm: React.FC = () => {
     }
   };
 
-  // Auto-reset success state — properly cleaned up
+  // Auto-reset success state
   useEffect(() => {
     if (status !== 'success') return;
     const timer = setTimeout(() => setStatus('idle'), 3000);
@@ -94,161 +107,130 @@ export const MissionCreateForm: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Sélection du Véhicule */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">Véhicule assigné</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Truck className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  name="vehicleId"
-                  required
-                  value={formData.vehicleId}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm appearance-none"
-                >
-                  <option value="" disabled>Sélectionner un véhicule...</option>
-                  {MOCK_VEHICLES.map((v) => (
-                    <option key={v.id} value={v.id}>{v.registration}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Sélection du Client */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">Client</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Users className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  name="clientId"
-                  required
-                  value={formData.clientId}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm appearance-none"
-                >
-                  <option value="" disabled>Sélectionner un client...</option>
-                  {MOCK_CLIENTS.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Revenus */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">Revenus prévus (MAD)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="number"
-                  name="revenues"
-                  min="0"
-                  step="0.01"
-                  required
-                  value={formData.revenues || ''}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm font-medium"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            {/* Coûts */}
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-gray-700">Coûts estimés (MAD)</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <DollarSign className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="number"
-                  name="costs"
-                  min="0"
-                  step="0.01"
-                  required
-                  value={formData.costs || ''}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm font-medium"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            {/* Statut de la Mission */}
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Statut initial</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                  <Activity className="h-5 w-5 text-gray-400" />
-                </div>
-                <select
-                  name="status"
-                  required
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm appearance-none"
-                >
-                  <option value={MissionStatus.PLANNED}>Planifiée</option>
-                  <option value={MissionStatus.IN_PROGRESS}>En cours</option>
-                  <option value={MissionStatus.COMPLETED}>Terminée</option>
-                  <option value={MissionStatus.CANCELLED}>Annulée</option>
-                </select>
-              </div>
-            </div>
+        {isLoadingData ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mb-3" />
+            <p className="text-sm text-gray-500">Chargement des véhicules et clients…</p>
           </div>
-
-          {/* Insight-Driven UI: Encart Profit Temps Réel */}
-          <div className={`mt-6 p-5 rounded-xl border transition-colors duration-300 flex items-center justify-between ${
-            isProfitPositive 
-              ? 'bg-emerald-50 border-emerald-100' 
-              : 'bg-rose-50 border-rose-100'
-          }`}>
-            <div className="flex items-center gap-3">
-              <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                isProfitPositive ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
-              }`}>
-                {isProfitPositive ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Véhicule */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">Véhicule assigné</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Truck className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    name="vehicleId" required value={formData.vehicleId} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm appearance-none"
+                  >
+                    <option value="" disabled>Sélectionner un véhicule…</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.registrationNumber}{v.brand ? ` — ${v.brand} ${v.model ?? ''}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <p className={`text-sm font-semibold ${isProfitPositive ? 'text-emerald-800' : 'text-rose-800'}`}>
-                  Indicateur Financier (Revenus - Coûts)
-                </p>
-                <p className={`text-xs ${isProfitPositive ? 'text-emerald-600/80' : 'text-rose-600/80'}`}>
-                  À titre indicatif avant validation
-                </p>
+
+              {/* Client */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">Client</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Users className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    name="clientId" required value={formData.clientId} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm appearance-none"
+                  >
+                    <option value="" disabled>Sélectionner un client…</option>
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Revenus */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">Revenus prévus (MAD)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number" name="revenues" min="0" step="0.01" required
+                    value={formData.revenues || ''} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm font-medium"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Coûts */}
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">Coûts estimés (MAD)</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number" name="costs" min="0" step="0.01" required
+                    value={formData.costs || ''} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 transition-all outline-none bg-white text-sm font-medium"
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
             </div>
-            <div className={`text-2xl font-bold tracking-tight ${isProfitPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
-              {profit > 0 ? '+' : ''}{profit.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MAD
-            </div>
-          </div>
 
-          <div className="pt-4 border-t border-gray-100 flex justify-end">
-            <button
-              type="submit"
-              disabled={status === 'loading'}
-              className="py-2.5 px-6 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-600/20 text-white font-medium text-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
-            >
-              {status === 'loading' ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Création...</span>
-                </>
-              ) : (
-                <span>Créer la mission</span>
-              )}
-            </button>
-          </div>
-        </form>
+            {/* Insight-Driven UI: Encart Profit Temps Réel */}
+            <div className={`mt-6 p-5 rounded-xl border transition-colors duration-300 flex items-center justify-between ${
+              isProfitPositive 
+                ? 'bg-emerald-50 border-emerald-100' 
+                : 'bg-rose-50 border-rose-100'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  isProfitPositive ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'
+                }`}>
+                  {isProfitPositive ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold ${isProfitPositive ? 'text-emerald-800' : 'text-rose-800'}`}>
+                    Indicateur Financier (Revenus - Coûts)
+                  </p>
+                  <p className={`text-xs ${isProfitPositive ? 'text-emerald-600/80' : 'text-rose-600/80'}`}>
+                    À titre indicatif avant validation
+                  </p>
+                </div>
+              </div>
+              <div className={`text-2xl font-bold tracking-tight ${isProfitPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
+                {profit > 0 ? '+' : ''}{profit.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MAD
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-100 flex justify-end">
+              <button
+                type="submit" disabled={status === 'loading'}
+                className="py-2.5 px-6 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-600/20 text-white font-medium text-sm transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+              >
+                {status === 'loading' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Création…</span>
+                  </>
+                ) : (
+                  <span>Créer la mission</span>
+                )}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

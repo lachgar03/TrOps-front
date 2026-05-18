@@ -26,7 +26,8 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       console.warn("Session expirée, redirection vers le login...");
       localStorage.removeItem('token');
-    
+      // Force page reload to reset Zustand store and redirect to login
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

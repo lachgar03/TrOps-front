@@ -50,7 +50,7 @@ const formatRelativeTime = (isoString: string): string => {
 
 const sortByLevel = (alerts: AlertResponse[]): AlertResponse[] => {
   const order: AlertLevel[] = ['HIGH', 'MEDIUM', 'LOW'];
-  return [...alerts].sort((a, b) => order.indexOf(a.level) - order.indexOf(b.level));
+  return [...alerts].sort((a, b) => order.indexOf(a.level as AlertLevel) - order.indexOf(b.level as AlertLevel));
 };
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ interface AlertRowProps {
 }
 
 const AlertRow: React.FC<AlertRowProps> = ({ alert }) => {
-  const config = LEVEL_CONFIG[alert.level];
+  const config = LEVEL_CONFIG[alert.level as AlertLevel] ?? LEVEL_CONFIG.LOW;
   return (
     <div
       className={`flex items-start gap-3 p-4 rounded-xl border border-gray-100 border-l-4 bg-white hover:shadow-sm transition-shadow ${config.rowBorder}`}
@@ -89,7 +89,7 @@ const AlertRow: React.FC<AlertRowProps> = ({ alert }) => {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-800 font-medium leading-snug line-clamp-2">
-          {alert.message}
+          {alert.title ?? alert.description}
         </p>
         <div className="flex flex-wrap items-center gap-2 mt-2">
           <span

@@ -27,9 +27,26 @@ export type ProfitabilityScore = (typeof ProfitabilityScore)[keyof typeof Profit
 export type AlertLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 export type AlertType =
-  | 'MAINTENANCE'
+  | 'HIGH_COST_VEHICLE'
+  | 'LOW_PROFIT_CLIENT'
+  | 'LOSS_MISSION'
+  | 'UPCOMING_MAINTENANCE'
+  | 'DOCUMENT_EXPIRATION';
+
+// ─── Maintenance ──────────────────────────────────────────────────────────────
+
+export type MaintenanceStatus = 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED';
+
+// ─── Expense ─────────────────────────────────────────────────────────────────
+
+export type ExpenseCategory =
   | 'FUEL'
-  | 'INSURANCE'
-  | 'DRIVER'
-  | 'FINANCIAL'
-  | 'SYSTEM';
+  | 'TOLL'
+  | 'MAINTENANCE_PART'
+  | 'SALARY'
+  | 'INSURANCE_PAYMENT'
+  | 'OTHER';
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+export type UserRole = 'ADMIN' | 'MANAGER' | 'OPERATOR';

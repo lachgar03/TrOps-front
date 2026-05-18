@@ -5,22 +5,24 @@ import type { MissionResponse } from '../types/mission.types';
 import { FileSpreadsheet, Loader2, Calendar, Truck, User, DollarSign, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { StatusBadge } from '../../../common/components/StatusBadge';
 
-// ─── Pagination config ────────────────────────────────────────────────────────
 const PAGE_SIZE = 10;
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const MissionList: React.FC = () => {
   const [missions, setMissions] = useState<MissionResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
 
   useEffect(() => {
     const fetchMissions = async () => {
+      setIsLoading(true);
       try {
-        const data = await missionApi.getMissions();
-        setMissions(Array.isArray(data) ? data : []);
+        const data = await missionApi.getMissions(currentPage - 1, PAGE_SIZE);
+        setMissions(data.content || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalElements(data.totalElements || 0);
       } catch (err) {
         const axiosErr = err as AxiosError<{ message?: string }>;
         setError(axiosErr.response?.data?.message ?? 'Impossible de charger les missions.');
@@ -30,13 +32,9 @@ export const MissionList: React.FC = () => {
     };
 
     void fetchMissions();
-  }, []);
+  }, [currentPage]);
 
-  // ── Pagination logic ──
-  const totalPages = Math.max(1, Math.ceil(missions.length / PAGE_SIZE));
-  const paginated = missions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  if (isLoading) {
+  if (isLoading && missions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
@@ -71,7 +69,7 @@ export const MissionList: React.FC = () => {
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
-          Total : <span className="text-gray-900">{missions.length}</span>
+          Total : <span className="text-gray-900">{totalElements}</span>
         </div>
       </div>
 
@@ -100,7 +98,7 @@ export const MissionList: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {paginated.length === 0 ? (
+            {missions.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
@@ -113,7 +111,7 @@ export const MissionList: React.FC = () => {
                 </td>
               </tr>
             ) : (
-              paginated.map((mission) => (
+              missions.map((mission) => (
                 <tr key={mission.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="py-4 px-6 text-sm text-gray-600 whitespace-nowrap">
                     {new Date(mission.createdAt).toLocaleDateString('fr-FR', {
@@ -144,7 +142,7 @@ export const MissionList: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-100">
-                          Marge: {mission.profitMargin?.toFixed(1) ?? '0'}%
+                          Marge: {(mission.profitMargin * 100)?.toFixed(1) ?? '0'}%
                         </span>
                         <StatusBadge score={mission.profitabilityScore} />
                       </div>
@@ -166,7 +164,7 @@ export const MissionList: React.FC = () => {
           <p className="text-xs text-gray-500">
             Page <span className="font-semibold text-gray-700">{currentPage}</span> sur{' '}
             <span className="font-semibold text-gray-700">{totalPages}</span>
-            {' '}— {missions.length} missions au total
+            {' '}— {totalElements} missions au total
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -190,7 +188,7 @@ export const MissionList: React.FC = () => {
                 ) : (
                   <button
                     key={item}
-                    onClick={() => setCurrentPage(item)}
+                    onClick={() => setCurrentPage(item as number)}
                     className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors border ${
                       currentPage === item
                         ? 'bg-indigo-600 text-white border-indigo-600'
@@ -215,3 +213,5 @@ export const MissionList: React.FC = () => {
     </div>
   );
 };
+
+export default MissionList;
